@@ -5,6 +5,11 @@ const branchMessage = document.getElementById('branchMessage');
 const inventoryStatus = document.getElementById('inventoryStatus');
 const managerSearch = document.getElementById('managerSearch');
 
+const managerUser = requireLogin(['manager']);
+if (!managerUser) {
+    throw new Error('Manager login required');
+}
+
 let inventoryRows = [];
 
 function renderInventory(rows) {
@@ -28,6 +33,7 @@ function renderInventory(rows) {
                     <th>Qty</th>
                     <th>Reorder</th>
                     <th>Status</th>
+                    <th>Qty to add</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -39,6 +45,9 @@ function renderInventory(rows) {
                         <td>${row.current_quantity}</td>
                         <td>${row.reorder_level}</td>
                         <td>${row.recommendation || 'OK'}</td>
+                        <td>
+                            <input class="form-control form-control-sm" type="number" min="1" value="25" data-restock-qty="${row.product_id}-${row.branch_id}" />
+                        </td>
                         <td><button class="btn btn-sm btn-outline-danger" data-restock="${row.product_id}" data-branch="${row.branch_id}">Restock</button></td>
                     </tr>
                 `).join('')}
@@ -50,16 +59,25 @@ function renderInventory(rows) {
         button.addEventListener('click', async () => {
             const productId = Number(button.dataset.restock);
             const branchId = Number(button.dataset.branch);
-            await apiFetch('/api/inventory/restock', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ branch_id: branchId, product_id: productId, quantity: 25 })
-            }).then(() => {
-                productMessage.innerHTML = '<div class="alert alert-success">Inventory restocked.</div>';
+            const quantityInput = inventoryStatus.querySelector(`[data-restock-qty="${productId}-${branchId}"]`);
+            const quantity = Number(quantityInput?.value || 25);
+
+            if (!quantity || quantity <= 0) {
+                productMessage.innerHTML = '<div class="alert alert-warning">Restock quantity must be greater than 0.</div>';
+                return;
+            }
+
+            try {
+                await apiFetch('/api/inventory/restock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ branch_id: branchId, product_id: productId, quantity })
+                });
+                productMessage.innerHTML = `<div class="alert alert-success">Restocked ${quantity} units successfully.</div>`;
                 loadInventoryStatus();
-            }).catch((err) => {
+            } catch (err) {
                 productMessage.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
-            });
+            }
         });
     });
 }
@@ -85,12 +103,12 @@ productForm.addEventListener('submit', async (e) => {
     payload.is_active = true;
 
     try {
-        const data = await apiFetch('/api/products/', {
+        await apiFetch('/api/products/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        productMessage.innerHTML = `<div class="alert alert-success">Product added successfully.</div>`;
+        productMessage.innerHTML = '<div class="alert alert-success">Product added successfully.</div>';
         productForm.reset();
         loadInventoryStatus();
     } catch (err) {

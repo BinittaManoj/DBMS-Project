@@ -3,6 +3,11 @@ const saleMessage = document.getElementById('saleMessage');
 const customersTable = document.getElementById('customersTable');
 const cashierSearch = document.getElementById('cashierSearch');
 
+const cashierUser = requireLogin(['cashier']);
+if (!cashierUser) {
+    throw new Error('Cashier login required');
+}
+
 let customerRows = [];
 
 function renderCustomers(rows) {
@@ -61,7 +66,7 @@ saleForm.addEventListener('submit', async (e) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        saleMessage.innerHTML = `<div class="alert alert-success">Sale processed successfully. Invoice: ${data.invoice_no || 'created'}</div>`;
+        saleMessage.innerHTML = `<div class="alert alert-success">${cashierUser.name} processed a sale successfully. Invoice: ${data.invoice_no || 'created'}</div>`;
         saleForm.reset();
         loadCustomers();
     } catch (err) {

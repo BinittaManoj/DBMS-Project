@@ -28,10 +28,16 @@
             <nav class="topbar navbar navbar-expand-lg">
                 <div class="container-fluid d-flex justify-content-between align-items-center">
                     <span>Manager Operations</span>
-                    <span id="roleBadge" class="badge bg-dark">Manager View</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="userLabel" class="badge bg-secondary"></span>
+                        <span id="roleBadge" class="badge bg-dark">Manager View</span>
+                        <button class="btn btn-sm btn-outline-dark" type="button" onclick="logoutUser()">Logout</button>
+                    </div>
                 </div>
             </nav>
             <div class="container-fluid py-4">
+                <div class="alert alert-warning mt-0 mb-4">Manager login active. Only the manager can restock and manage
+                    inventory. Concurrent cashier sales are protected by database locking.</div>
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>Role</span>
