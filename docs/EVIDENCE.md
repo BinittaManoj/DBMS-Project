@@ -68,3 +68,16 @@ CONTRIBUTING.md : True
 CHECKLIST.md : True
 VIVA_NOTES.md : True
 ```
+
+### 0.4 Original SQL baseline — BLOCKED
+
+Verification:
+
+```text
+Test-Path docs\COURSE_BASELINE.md
+False
+```
+
+Blocker: the required original course SQL baseline is not present in the
+repository. It cannot be reconstructed or replaced without the team's original
+deliverable. Provide the file before continuing the checklist.
