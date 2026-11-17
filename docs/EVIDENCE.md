@@ -101,3 +101,20 @@ successfully: all five tool versions were reported, `.gitignore` is tracked
 from the first commit and excludes the required paths, all required folders
 and files exist, the supplied baseline has eight table definitions, and the
 environment template contains the expected keys with placeholder secrets.
+
+### 1.1 Preserve baseline table names — BLOCKED
+
+Verification against `database/schema.sql` and the live `retail_db`:
+
+```text
+Current base tables:
+branches, categories, customers, employees, inventory, low_stock_alerts,
+products, purchase_order_items, purchase_orders, sale_items, sales, suppliers
+Baseline singular names present: inventory
+```
+
+The current application uses plural table names throughout its ORM, SQL,
+routers, and live database; the baseline requires eight singular names. The
+schema script drops and recreates tables, so a direct rename/reset risks the
+existing data and requires a coordinated application/schema migration.
+Implementation is paused pending the user's choice of schema direction.
