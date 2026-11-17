@@ -69,15 +69,15 @@ CHECKLIST.md : True
 VIVA_NOTES.md : True
 ```
 
-### 0.4 Original SQL baseline — BLOCKED
+### 0.4 Original SQL baseline — PASS
 
 Verification:
 
 ```text
-Test-Path docs\COURSE_BASELINE.md
-False
+baseline exists: True
+baseline CREATE TABLE statements: 8
+baseline sections: 16
 ```
 
-Blocker: the required original course SQL baseline is not present in the
-repository. It cannot be reconstructed or replaced without the team's original
-deliverable. Provide the file before continuing the checklist.
+The user-provided original SQL deliverable is preserved in
+`docs/COURSE_BASELINE.md`.
