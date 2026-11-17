@@ -17,6 +17,16 @@ env/
 
 # Environment secrets -- NEVER commit .env
 .env
+.env.local
+
+# JavaScript dependencies and build output
+node_modules/
+.next/
+
+# Runtime uploads; keep only tracked placeholders
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/.gitkeep.placeholder
 
 # IDE
 .idea/
