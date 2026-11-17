@@ -140,3 +140,24 @@ column is an identity column, and the query found no primary-key fields
 without identity generation. The schema declarations use
 `GENERATED ALWAYS AS IDENTITY`; no `SERIAL` or `MAX(...)` ID allocator was
 found in `database/schema.sql`.
+
+### 1.3 Composite keys and inventory checks — PASS
+
+The migration was applied transactionally to the live database; it preserved
+the existing rows and added a duplicate-product-line guard to `process_sale`.
+Verification:
+
+```text
+inventory primary key: branch_id, product_id
+sale_items primary key: sale_id, product_id
+inventory constraints: UNIQUE (branch_id, product_id); CHECK ((quantity >= 0)); CHECK ((reorder_level >= 0))
+duplicate sale-item pairs: 0
+Focused schema/procedure tests: 4 passed
+Full test suite: 12 passed, 1 pre-existing deprecation warning
+Frontend lint: passed
+Frontend production build: passed
+```
+
+`sale_item_id` and `inventory_id` remain unique identity columns for API
+compatibility. Each product can now appear only once in a sale; duplicate sale
+lines are rejected with a clear database error.

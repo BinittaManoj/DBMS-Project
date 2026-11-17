@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS purchase_orders        CASCADE;
 DROP TABLE IF EXISTS sale_items             CASCADE;
 DROP TABLE IF EXISTS sales                  CASCADE;
 DROP TABLE IF EXISTS inventory              CASCADE;
+DROP TABLE IF EXISTS app_user               CASCADE;
 DROP TABLE IF EXISTS employees              CASCADE;
 DROP TABLE IF EXISTS customers              CASCADE;
 DROP TABLE IF EXISTS products               CASCADE;
@@ -35,6 +36,23 @@ CREATE TABLE branches (
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_branches_city ON branches(city);
+
+-- =============================================================================
+-- 1A. APP USERS (auth & role enforcement)
+-- =============================================================================
+CREATE TABLE app_user (
+    user_id       INTEGER      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    full_name     VARCHAR(150) NOT NULL,
+    email         VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role          VARCHAR(30)  NOT NULL CHECK (role IN ('GENERAL_MANAGER', 'BRANCH_MANAGER')),
+    branch_id     INTEGER      REFERENCES branches(branch_id),
+    is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CHECK ((role = 'GENERAL_MANAGER' AND branch_id IS NULL) OR (role = 'BRANCH_MANAGER' AND branch_id IS NOT NULL))
+);
+CREATE INDEX idx_app_user_email ON app_user(email);
+CREATE INDEX idx_app_user_branch ON app_user(branch_id);
 
 -- =============================================================================
 -- 2. CATEGORIES
@@ -132,7 +150,7 @@ CREATE INDEX idx_employees_branch ON employees(branch_id);
 -- 7. INVENTORY  (one row per branch+product; pharmacy adds batch & expiry)
 -- =============================================================================
 CREATE TABLE inventory (
-    inventory_id      INTEGER       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    inventory_id      INTEGER       GENERATED ALWAYS AS IDENTITY NOT NULL,
     branch_id         INTEGER       NOT NULL REFERENCES branches(branch_id),
     product_id        INTEGER       NOT NULL REFERENCES products(product_id),
     quantity          INTEGER       NOT NULL DEFAULT 0 CHECK (quantity >= 0),
@@ -142,6 +160,8 @@ CREATE TABLE inventory (
     manufacture_date  DATE,                            -- manufacture date of current batch
     last_restocked_at TIMESTAMPTZ,
     updated_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (branch_id, product_id),
+    UNIQUE (inventory_id),
     UNIQUE (branch_id, product_id)
 );
 CREATE INDEX idx_inventory_branch  ON inventory(branch_id);
@@ -182,7 +202,7 @@ CREATE INDEX idx_sales_invoice  ON sales(invoice_no);
 -- 10. SALE_ITEMS
 -- =============================================================================
 CREATE TABLE sale_items (
-    sale_item_id INTEGER        GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    sale_item_id INTEGER        GENERATED ALWAYS AS IDENTITY NOT NULL,
     sale_id      INTEGER        NOT NULL REFERENCES sales(sale_id) ON DELETE CASCADE,
     product_id   INTEGER        NOT NULL REFERENCES products(product_id),
     quantity     INTEGER        NOT NULL CHECK (quantity > 0),
@@ -190,7 +210,9 @@ CREATE TABLE sale_items (
     discount_pct NUMERIC(5,2)   NOT NULL DEFAULT 0
                  CHECK (discount_pct >= 0 AND discount_pct <= 100),
     subtotal     NUMERIC(12,2)  NOT NULL CHECK (subtotal >= 0),
-    created_at   TIMESTAMPTZ    NOT NULL DEFAULT NOW()
+    created_at   TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (sale_id, product_id),
+    UNIQUE (sale_item_id)
 );
 CREATE INDEX idx_sale_items_sale    ON sale_items(sale_id);
 CREATE INDEX idx_sale_items_product ON sale_items(product_id);

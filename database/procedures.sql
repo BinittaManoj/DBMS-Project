@@ -52,6 +52,16 @@ BEGIN
         RAISE EXCEPTION 'process_sale: Invalid payment method: %', p_payment_method;
     END IF;
 
+    IF EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(p_items) AS line
+        GROUP BY (line->>'product_id')::INTEGER
+        HAVING COUNT(*) > 1
+    ) THEN
+        RAISE EXCEPTION
+            'process_sale: Each product may appear only once per sale. Combine quantities for duplicate product IDs.';
+    END IF;
+
     -- -------------------------------------------------------------------------
     -- Step 2: Lock inventory rows and validate stock (FOR UPDATE = row-level lock)
     -- All locks acquired before any insert to prevent deadlocks.

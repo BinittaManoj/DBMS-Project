@@ -47,6 +47,15 @@ python -m pip install --upgrade pip
 pip install -r backend\requirements.txt
 ```
 
+## Demo credentials
+
+The backend includes a simple JWT auth layer with cookie-based session storage.
+
+- General Manager: `gm@medmart.in` / `manager123`
+- Branch Manager 1: `branch1@medmart.in` / `branch123`
+- Branch Manager 2: `branch2@medmart.in` / `branch456`
+- Branch Manager 3: `branch3@medmart.in` / `branch789`
+
 ## Initialize database
 
 ```powershell
@@ -118,6 +127,8 @@ The database includes the following main tables:
 ### Key rules
 
 - Inventory has one row per `(branch_id, product_id)`.
+- `inventory` and `sale_items` use composite primary keys; their generated row IDs remain unique alternate identifiers for the API.
+- A medicine may appear only once per invoice; combine duplicate product lines before submitting a sale.
 - `NUMERIC(12,2)` is used for all monetary values.
 - Invoice numbers follow the `INV-YYYYMMDD-0001` pattern.
 - Product sales decrement stock only through the trigger on `sale_items` insert.

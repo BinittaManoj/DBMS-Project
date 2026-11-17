@@ -1,8 +1,20 @@
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Identity, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 
 Base = declarative_base()
+
+
+class AppUser(Base):
+    __tablename__ = 'app_user'
+    user_id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String(150), nullable=False)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(30), nullable=False)
+    branch_id = Column(Integer, ForeignKey('branches.branch_id'), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
 
 class Branch(Base):
@@ -21,6 +33,7 @@ class Branch(Base):
     employees = relationship('Employee', back_populates='branch')
     inventory = relationship('Inventory', back_populates='branch')
     sales = relationship('Sale', back_populates='branch')
+    app_users = relationship('AppUser', back_populates='branch')
 
 
 class Category(Base):
@@ -113,11 +126,14 @@ class Employee(Base):
     purchase_orders = relationship('PurchaseOrder', back_populates='employee')
 
 
+AppUser.branch = relationship('Branch', back_populates='app_users')
+
+
 class Inventory(Base):
     __tablename__ = 'inventory'
-    inventory_id = Column(Integer, primary_key=True, index=True)
-    branch_id = Column(Integer, ForeignKey('branches.branch_id'), nullable=False)
-    product_id = Column(Integer, ForeignKey('products.product_id'), nullable=False)
+    inventory_id = Column(Integer, Identity(always=True), unique=True, nullable=False)
+    branch_id = Column(Integer, ForeignKey('branches.branch_id'), primary_key=True)
+    product_id = Column(Integer, ForeignKey('products.product_id'), primary_key=True)
     quantity = Column(Integer, nullable=False, default=0)
     reorder_level = Column(Integer, nullable=False, default=10)
     batch_number = Column(String(50), nullable=True)
@@ -157,9 +173,9 @@ class Sale(Base):
 
 class SaleItem(Base):
     __tablename__ = 'sale_items'
-    sale_item_id = Column(Integer, primary_key=True, index=True)
-    sale_id = Column(Integer, ForeignKey('sales.sale_id', ondelete='CASCADE'), nullable=False)
-    product_id = Column(Integer, ForeignKey('products.product_id'), nullable=False)
+    sale_item_id = Column(Integer, Identity(always=True), unique=True, nullable=False)
+    sale_id = Column(Integer, ForeignKey('sales.sale_id', ondelete='CASCADE'), primary_key=True)
+    product_id = Column(Integer, ForeignKey('products.product_id'), primary_key=True)
     quantity = Column(Integer, nullable=False)
     unit_price = Column(Numeric(12, 2), nullable=False)
     discount_pct = Column(Numeric(5, 2), nullable=False, default=0)
