@@ -93,3 +93,11 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES= present
 .env.example:5:DATABASE_URL=postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/retail_db
 No concrete database password or JWT secret found.
 ```
+
+### Phase 0 regression pass — PASS
+
+Re-ran checks 0.1–0.5 after completing the phase. The commands completed
+successfully: all five tool versions were reported, `.gitignore` is tracked
+from the first commit and excludes the required paths, all required folders
+and files exist, the supplied baseline has eight table definitions, and the
+environment template contains the expected keys with placeholder secrets.
