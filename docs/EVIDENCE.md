@@ -51,3 +51,20 @@ ebc1390 third commit
 
 The working tree also contains the in-progress application changes from this
 task; they were left unstaged and untouched.
+
+### 0.3 Project structure — PASS
+
+PowerShell `Test-Path` verification:
+
+```text
+backend : True
+frontend : True
+database : True
+docs : True
+tests : True
+.env.example : True
+README.md : True
+CONTRIBUTING.md : True
+CHECKLIST.md : True
+VIVA_NOTES.md : True
+```
