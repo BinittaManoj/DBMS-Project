@@ -1,8 +1,10 @@
 import threading
 import os
+from dotenv import load_dotenv
 
 import psycopg2
 
+load_dotenv()
 DB_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/retail_db')
 
 

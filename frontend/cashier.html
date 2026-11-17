@@ -1,65 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cashier Portal</title>
+    <title>MedMart — Cashier & Point of Sale (POS)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/style.css" />
 </head>
+
 <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="app-shell">
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <h3>MedMart</h3>
-            <nav>
-                <a href="/index.html">Dashboard</a>
-                <a href="/manager.html">Manager Portal</a>
-                <a href="/cashier.html" class="active">Cashier</a>
-                <a href="/branches.html">Branches</a>
-                <a href="/products.html">Products</a>
-                <a href="/inventory.html">Inventory</a>
-                <a href="/sales.html">Sales</a>
-            </nav>
+            <div class="sidebar-header">
+                <div class="brand-icon">
+                    <i class="bi bi-capsule"></i>
+                </div>
+                <div class="brand-details">
+                    <span class="brand-name">MedMart</span>
+                    <span class="brand-tag">Pharmacy Chain</span>
+                </div>
+            </div>
+
+            <div class="sidebar-nav-container">
+                <div class="nav-section-title">Main</div>
+                <nav>
+                    <a href="/index.html"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+                    <a href="/cashier.html" class="active"><i class="bi bi-cart3"></i>Cashier POS</a>
+                    <a href="/sales.html"><i class="bi bi-receipt-cutoff"></i>Sales & Billing</a>
+                </nav>
+
+                <div class="nav-section-title">Catalog & Stock</div>
+                <nav>
+                    <a href="/products.html"><i class="bi bi-box-seam"></i>Products</a>
+                    <a href="/inventory.html"><i class="bi bi-boxes"></i>Inventory</a>
+                </nav>
+
+                <div class="nav-section-title">Operations</div>
+                <nav>
+                    <a href="/manager.html"><i class="bi bi-shield-check"></i>Manager Portal</a>
+                    <a href="/branches.html"><i class="bi bi-shop"></i>Branches</a>
+                    <a href="/customers.html"><i class="bi bi-people"></i>Customers</a>
+                    <a href="/suppliers.html"><i class="bi bi-truck"></i>Suppliers</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="system-status-pill">
+                    <span class="status-indicator"></span>
+                    <span>POS Terminal • Ready</span>
+                </div>
+            </div>
         </aside>
+
+        <!-- Main Content Area -->
         <main class="content">
-            <nav class="topbar navbar navbar-expand-lg">
-                <div class="container-fluid"><span>Cashier Operations</span></div>
-            </nav>
-            <div class="container-fluid py-4">
-                <div class="card mb-4">
-                    <div class="card-header">Create Sale</div>
-                    <div class="card-body">
-                        <form id="saleForm">
-                            <div class="row g-2">
-                                <div class="col-md-3"><input class="form-control" name="branch_id" type="number" placeholder="Branch ID" required></div>
-                                <div class="col-md-3"><input class="form-control" name="customer_id" type="number" placeholder="Customer ID (optional)"></div>
-                                <div class="col-md-3"><input class="form-control" name="employee_id" type="number" placeholder="Employee ID" required></div>
-                                <div class="col-md-3"><select class="form-select" name="payment_method"><option value="CASH">CASH</option><option value="CARD">CARD</option><option value="UPI">UPI</option><option value="INSURANCE">INSURANCE</option></select></div>
-                            </div>
-                            <div class="mt-3">
-                                <label class="form-label">Items (JSON format)</label>
-                                <textarea class="form-control" name="items" rows="6" required>[{"product_id":1,"quantity":2,"unit_price":120.00,"discount_pct":0}]</textarea>
-                            </div>
-                            <div class="row g-2 mt-2">
-                                <div class="col-md-4"><input class="form-control" name="discount" type="number" step="0.01" value="0" placeholder="Discount"></div>
-                                <div class="col-md-4"><input class="form-control" name="notes" placeholder="Notes"></div>
-                                <div class="col-md-4"><input class="form-control" name="prescription_no" placeholder="Prescription no"></div>
-                            </div>
-                            <button class="btn btn-primary mt-3" type="submit">Process Sale</button>
-                        </form>
-                        <div id="saleMessage" class="mt-3"></div>
+            <!-- Topbar -->
+            <header class="topbar">
+                <button type="button" class="mobile-toggle-btn" id="mobileSidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1>Point of Sale (POS) Terminal</h1>
+                    <span>Instant checkout, inventory-synchronized billing & receipt generation</span>
+                </div>
+                <div class="topbar-right">
+                    <div class="date-pill">
+                        <i class="bi bi-clock"></i>
+                        <span id="liveClock">Loading...</span>
                     </div>
                 </div>
+            </header>
 
-                <div class="card">
-                    <div class="card-header">Customers</div>
-                    <div class="card-body">
-                        <div id="customersTable"></div>
+            <!-- POS Body Grid -->
+            <div class="page-container">
+                <div class="pos-container">
+                    <!-- Left: Products Catalog & Search -->
+                    <div>
+                        <!-- Search & Quick Filters -->
+                        <div class="card mb-3">
+                            <div class="card-body p-3">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-7">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="bi bi-search text-muted"></i>
+                                            </span>
+                                            <input type="text" id="productSearchInput" class="form-control border-start-0 ps-0" placeholder="Search medicine, formula, or brand..." />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <select id="scheduleFilter" class="form-select">
+                                            <option value="">All Drug Schedules</option>
+                                            <option value="OTC">OTC (Over the Counter)</option>
+                                            <option value="H">Schedule H (Prescription)</option>
+                                            <option value="X">Schedule X (Strict Rx)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Cards Grid -->
+                        <div class="row g-3" id="posProductGrid">
+                            <!-- Populated dynamically via cashier.js -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Active Bill & Cart Panel -->
+                    <div>
+                        <div class="pos-cart-panel">
+                            <div class="pos-cart-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-receipt text-primary fs-5"></i>
+                                    <span class="fw-bold fs-6">Current Bill</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="clearCartBtn">
+                                    <i class="bi bi-trash3 me-1"></i>Clear
+                                </button>
+                            </div>
+
+                            <!-- Cart Metadata: Branch, Customer, Cashier -->
+                            <div class="p-3 bg-light border-bottom">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label mb-1">Branch</label>
+                                        <select id="cartBranchSelect" class="form-select form-select-sm" required>
+                                            <!-- Dynamically filled -->
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label mb-1">Cashier / Staff</label>
+                                        <select id="cartEmployeeSelect" class="form-select form-select-sm" required>
+                                            <!-- Dynamically filled -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label mb-1">Customer</label>
+                                    <div class="input-group input-group-sm">
+                                        <select id="cartCustomerSelect" class="form-select form-select-sm">
+                                            <option value="">Walk-in Customer</option>
+                                            <!-- Dynamically filled -->
+                                        </select>
+                                        <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#quickAddCustomerModal">
+                                            <i class="bi bi-person-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cart Line Items -->
+                            <div class="pos-cart-items" id="cartItemsList">
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-cart-x fs-1 opacity-50 d-block mb-2"></i>
+                                    <div>Your cart is empty.</div>
+                                    <small>Click on items from the catalog to add them.</small>
+                                </div>
+                            </div>
+
+                            <!-- Cart Footer & Checkout -->
+                            <div class="pos-cart-footer">
+                                <div class="summary-row">
+                                    <span>Subtotal</span>
+                                    <span id="cartSubtotal">₹0.00</span>
+                                </div>
+                                <div class="summary-row align-items-center">
+                                    <span>Extra Discount (₹)</span>
+                                    <input type="number" id="cartDiscountInput" class="form-control form-control-sm text-end" style="width: 85px;" value="0" min="0" step="1" />
+                                </div>
+                                <div class="summary-row">
+                                    <span>Tax (GST 12% Inc.)</span>
+                                    <span id="cartTax">₹0.00</span>
+                                </div>
+                                <div class="summary-row total">
+                                    <span>Total Payable</span>
+                                    <span id="cartGrandTotal">₹0.00</span>
+                                </div>
+
+                                <!-- Payment Method & Options -->
+                                <div class="mb-3">
+                                    <label class="form-label mb-1">Payment Method</label>
+                                    <div class="btn-group w-100" role="group" id="paymentMethodGroup">
+                                        <input type="radio" class="btn-check" name="payment_method" id="payCash" value="CASH" checked>
+                                        <label class="btn btn-outline-secondary btn-sm" for="payCash"><i class="bi bi-cash me-1"></i>Cash</label>
+
+                                        <input type="radio" class="btn-check" name="payment_method" id="payUPI" value="UPI">
+                                        <label class="btn btn-outline-secondary btn-sm" for="payUPI"><i class="bi bi-qr-code me-1"></i>UPI</label>
+
+                                        <input type="radio" class="btn-check" name="payment_method" id="payCard" value="CARD">
+                                        <label class="btn btn-outline-secondary btn-sm" for="payCard"><i class="bi bi-credit-card me-1"></i>Card</label>
+
+                                        <input type="radio" class="btn-check" name="payment_method" id="payIns" value="INSURANCE">
+                                        <label class="btn btn-outline-secondary btn-sm" for="payIns"><i class="bi bi-shield-plus me-1"></i>Ins.</label>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <input type="text" id="cartPrescriptionNo" class="form-control form-control-sm" placeholder="Rx No. (Optional)" />
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text" id="cartNotes" class="form-control form-control-sm" placeholder="Order notes..." />
+                                    </div>
+                                </div>
+
+                                <button type="button" class="btn btn-primary w-100 py-2 fs-6 shadow" id="processSaleBtn">
+                                    <i class="bi bi-check2-circle fs-5 me-1"></i>Process Sale & Print Bill
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
+
+    <!-- Quick Add Customer Modal -->
+    <div class="modal fade" id="quickAddCustomerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-primary">
+                        <i class="bi bi-person-plus me-2"></i>Quick Add Customer
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="quickCustomerForm">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-control" name="first_name" required />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" name="last_name" required />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mobile Phone</label>
+                            <input type="tel" class="form-control" name="phone" required placeholder="10-digit number" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" name="city" value="Mumbai" />
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Save Customer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/common.js"></script>
     <script src="/static/js/cashier.js"></script>
 </body>
+
 </html>

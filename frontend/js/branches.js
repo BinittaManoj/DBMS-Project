@@ -1,16 +1,50 @@
-fetch('/api/branches/')
-    .then((r) => r.json())
-    .then((rows) => {
-        const tableHTML = `
-      <table class="table table-striped table-hover">
-        <thead><tr><th>ID</th><th>Name</th><th>City</th><th>Manager</th><th>Phone</th></tr></thead>
-        <tbody>
-          ${rows.map((row) => `<tr><td>${row.branch_id}</td><td>${row.branch_name}</td><td>${row.city}</td><td>${row.manager_name || ''}</td><td>${row.phone}</td></tr>`).join('')}
-        </tbody>
-      </table>
-    `;
-        document.getElementById('branchesTable').innerHTML = tableHTML;
-    })
-    .catch(() => {
-        document.getElementById('branchesTable').innerHTML = '<div class="alert alert-danger">Unable to load branches.</div>';
-    });
+// =============================================================================
+// MedMart Branches Management Logic
+// =============================================================================
+
+async function loadBranches() {
+    const tbody = document.getElementById('branchesTableBody');
+    if (!tbody) return;
+
+    try {
+        const rows = await fetchJson(`${apiBase}/branches/`);
+        if (!rows || rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No branches found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = rows.map(r => `
+            <tr>
+                <td><span class="badge badge-soft-dark">#${r.branch_id}</span></td>
+                <td>
+                    <div class="fw-bold text-dark">${r.branch_name}</div>
+                    <small class="text-muted">${r.email || ''}</small>
+                </td>
+                <td>
+                    <span class="badge badge-soft-info"><i class="bi bi-geo-alt me-1"></i>${r.city}</span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-person-badge text-muted"></i>
+                        <span>${r.manager_name || 'Unassigned'}</span>
+                    </div>
+                </td>
+                <td>
+                    <a href="tel:${r.phone}" class="text-decoration-none fw-semibold">
+                        <i class="bi bi-telephone me-1 text-primary"></i>${r.phone}
+                    </a>
+                </td>
+                <td>
+                    <span class="text-muted small">${r.address}</span>
+                </td>
+                <td class="text-center">
+                    <span class="badge badge-soft-success"><i class="bi bi-check-circle me-1"></i>Operational</span>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-danger">Unable to load branches.</td></tr>`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadBranches);

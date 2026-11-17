@@ -4,39 +4,183 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sales & Billing</title>
+    <title>MedMart — Sales & Billing History</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 
 <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="app-shell">
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <h3>MedMart</h3>
-            <nav>
-                <a href="/index.html">Dashboard</a>
-                <a href="/branches.html">Branches</a>
-                <a href="/products.html">Products</a>
-                <a href="/suppliers.html">Suppliers</a>
-                <a href="/customers.html">Customers</a>
-                <a href="/inventory.html">Inventory</a>
-                <a href="/sales.html" class="active">Sales</a>
-            </nav>
+            <div class="sidebar-header">
+                <div class="brand-icon">
+                    <i class="bi bi-capsule"></i>
+                </div>
+                <div class="brand-details">
+                    <span class="brand-name">MedMart</span>
+                    <span class="brand-tag">Pharmacy Chain</span>
+                </div>
+            </div>
+
+            <div class="sidebar-nav-container">
+                <div class="nav-section-title">Main</div>
+                <nav>
+                    <a href="/index.html"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+                    <a href="/cashier.html"><i class="bi bi-cart3"></i>Cashier POS</a>
+                    <a href="/sales.html" class="active"><i class="bi bi-receipt-cutoff"></i>Sales & Billing</a>
+                </nav>
+
+                <div class="nav-section-title">Catalog & Stock</div>
+                <nav>
+                    <a href="/products.html"><i class="bi bi-box-seam"></i>Products</a>
+                    <a href="/inventory.html"><i class="bi bi-boxes"></i>Inventory</a>
+                </nav>
+
+                <div class="nav-section-title">Operations</div>
+                <nav>
+                    <a href="/manager.html"><i class="bi bi-shield-check"></i>Manager Portal</a>
+                    <a href="/branches.html"><i class="bi bi-shop"></i>Branches</a>
+                    <a href="/customers.html"><i class="bi bi-people"></i>Customers</a>
+                    <a href="/suppliers.html"><i class="bi bi-truck"></i>Suppliers</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="system-status-pill">
+                    <span class="status-indicator"></span>
+                    <span>Sales Ledger • Active</span>
+                </div>
+            </div>
         </aside>
+
+        <!-- Main Content Area -->
         <main class="content">
-            <nav class="topbar navbar navbar-expand-lg">
-                <div class="container-fluid"><span>Sales & Billing</span></div>
-            </nav>
-            <div class="container-fluid py-4">
+            <!-- Topbar -->
+            <header class="topbar">
+                <button type="button" class="mobile-toggle-btn" id="mobileSidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1>Sales & Billing Ledger</h1>
+                    <span>Historical transaction records, invoice reprints & revenue audit</span>
+                </div>
+                <div class="topbar-right">
+                    <div class="date-pill">
+                        <i class="bi bi-clock"></i>
+                        <span id="liveClock">Loading...</span>
+                    </div>
+                    <a href="cashier.html" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>New Sale
+                    </a>
+                </div>
+            </header>
+
+            <!-- Page Container -->
+            <div class="page-container">
+                <!-- Sales KPI Metrics -->
+                <div class="row g-3 mb-3" id="salesSummaryCards">
+                    <div class="col-md-4">
+                        <div class="stat-card-modern primary">
+                            <div>
+                                <div class="stat-label">Total Invoiced</div>
+                                <div class="stat-value" id="summaryTotalRevenue">₹0.00</div>
+                                <div class="stat-subtext">Across all completed bills</div>
+                            </div>
+                            <div class="stat-icon-wrapper"><i class="bi bi-cash-stack"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card-modern success">
+                            <div>
+                                <div class="stat-label">Invoices Count</div>
+                                <div class="stat-value" id="summaryTotalBills">0</div>
+                                <div class="stat-subtext">Verified sales records</div>
+                            </div>
+                            <div class="stat-icon-wrapper"><i class="bi bi-receipt"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card-modern warning">
+                            <div>
+                                <div class="stat-label">Average Bill Size</div>
+                                <div class="stat-value" id="summaryAvgBill">₹0.00</div>
+                                <div class="stat-subtext">Mean transaction basket</div>
+                            </div>
+                            <div class="stat-icon-wrapper"><i class="bi bi-calculator"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Filter & Search Card -->
+                <div class="card mb-4">
+                    <div class="card-body p-3">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="salesSearchInput" class="form-control border-start-0 ps-0" placeholder="Search by invoice number, customer, or cashier..." />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="paymentFilter" class="form-select">
+                                    <option value="">All Payment Modes</option>
+                                    <option value="CASH">Cash</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="CARD">Card</option>
+                                    <option value="INSURANCE">Insurance</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <button type="button" class="btn btn-outline-secondary w-100" onclick="loadSalesHistory()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh Records
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Records Table Card -->
                 <div class="card">
-                    <div class="card-header">Billing</div>
-                    <div class="card-body">
-                        <div id="salesStatus"></div>
+                    <div class="card-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-journal-text text-primary"></i>
+                            <span>All Invoices & Transactions</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="salesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Invoice #</th>
+                                        <th>Branch</th>
+                                        <th>Customer & Cashier</th>
+                                        <th>Date & Time</th>
+                                        <th class="text-center">Payment</th>
+                                        <th class="text-end">Total Amount</th>
+                                        <th class="text-center" style="width: 110px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salesTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-muted">Loading transactions...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/common.js"></script>
     <script src="/static/js/sales.js"></script>
 </body>
 

@@ -4,48 +4,158 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MedMart Dashboard</title>
+    <title>MedMart — Retail Analytics Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="app-shell">
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <h3>MedMart</h3>
-            <nav>
-                <a href="/index.html" class="active">Dashboard</a>
-                <a href="/branches.html">Branches</a>
-                <a href="/products.html">Products</a>
-                <a href="/suppliers.html">Suppliers</a>
-                <a href="/customers.html">Customers</a>
-                <a href="/inventory.html">Inventory</a>
-                <a href="/sales.html">Sales</a>
-            </nav>
+            <div class="sidebar-header">
+                <div class="brand-icon">
+                    <i class="bi bi-capsule"></i>
+                </div>
+                <div class="brand-details">
+                    <span class="brand-name">MedMart</span>
+                    <span class="brand-tag">Pharmacy Chain</span>
+                </div>
+            </div>
+
+            <div class="sidebar-nav-container">
+                <div class="nav-section-title">Main</div>
+                <nav>
+                    <a href="index.html" class="active"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+                    <a href="cashier.html"><i class="bi bi-cart3"></i>Cashier POS</a>
+                    <a href="sales.html"><i class="bi bi-receipt-cutoff"></i>Sales & Billing</a>
+                </nav>
+
+                <div class="nav-section-title">Catalog & Stock</div>
+                <nav>
+                    <a href="products.html"><i class="bi bi-box-seam"></i>Products</a>
+                    <a href="inventory.html"><i class="bi bi-boxes"></i>Inventory</a>
+                </nav>
+
+                <div class="nav-section-title">Operations</div>
+                <nav>
+                    <a href="manager.html"><i class="bi bi-shield-check"></i>Manager Portal</a>
+                    <a href="branches.html"><i class="bi bi-shop"></i>Branches</a>
+                    <a href="customers.html"><i class="bi bi-people"></i>Customers</a>
+                    <a href="suppliers.html"><i class="bi bi-truck"></i>Suppliers</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="system-status-pill">
+                    <span class="status-indicator"></span>
+                    <span>MedMart v1.0 • System Online</span>
+                </div>
+            </div>
         </aside>
+
+        <!-- Main Content Area -->
         <main class="content">
-            <nav class="topbar navbar navbar-expand-lg">
-                <div class="container-fluid">
-                    <span>Retail Analytics Dashboard</span>
+            <!-- Topbar -->
+            <header class="topbar">
+                <button type="button" class="mobile-toggle-btn" id="mobileSidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1>Retail Analytics Dashboard</h1>
+                    <span>Live branch analytics, revenue metrics, and inventory alerts</span>
                 </div>
-            </nav>
-            <div class="container-fluid py-4">
-                <div class="row g-3 mb-4" id="statCards"></div>
-                <div class="row g-4">
-                    <div class="col-lg-6"><canvas id="salesTrendChart"></canvas></div>
-                    <div class="col-lg-6"><canvas id="branchChart"></canvas></div>
+                <div class="topbar-right">
+                    <div class="date-pill">
+                        <i class="bi bi-clock"></i>
+                        <span id="liveClock">Loading...</span>
+                    </div>
+                    <a href="cashier.html" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>New Sale
+                    </a>
                 </div>
-                <div class="card mt-4">
-                    <div class="card-header">Recent Transactions</div>
-                    <div class="card-body">
-                        <table class="table table-striped" id="recentSalesTable"></table>
+            </header>
+
+            <!-- Dashboard Body -->
+            <div class="page-container">
+                <!-- Alert Ticker for Low Stock -->
+                <div id="lowStockAlertBanner" class="alert alert-warning d-flex align-items-center justify-content-between mb-4 border-0 shadow-sm" style="display: none !important; border-left: 4px solid var(--warning) !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+                        <div>
+                            <strong>Inventory Restock Required:</strong>
+                            <span id="lowStockText">Several products have dropped below minimum reorder levels.</span>
+                        </div>
+                    </div>
+                    <a href="inventory.html" class="btn btn-warning btn-sm fw-bold">View Inventory</a>
+                </div>
+
+                <!-- KPI Stat Cards Grid -->
+                <div class="row g-3 mb-3" id="statCards"></div>
+
+                <!-- Analytics Charts -->
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-7">
+                        <div class="chart-container-card">
+                            <div class="chart-header">
+                                <div>
+                                    <h3 class="chart-title">Revenue & Sales Trends</h3>
+                                    <span class="chart-subtitle">Monthly sales volume trajectory across all branches</span>
+                                </div>
+                                <span class="badge badge-soft-success">
+                                    <i class="bi bi-graph-up-arrow me-1"></i>Growth
+                                </span>
+                            </div>
+                            <div style="position: relative; height: 220px;">
+                                <canvas id="salesTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="chart-container-card">
+                            <div class="chart-header">
+                                <div>
+                                    <h3 class="chart-title">Branch Revenue Distribution</h3>
+                                    <span class="chart-subtitle">Contribution by retail store</span>
+                                </div>
+                                <span class="badge badge-soft-primary">Live</span>
+                            </div>
+                            <div style="position: relative; height: 220px;">
+                                <canvas id="branchChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions Table Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-clock-history text-primary"></i>
+                            <span>Recent Transactions</span>
+                        </div>
+                        <div class="header-actions">
+                            <a href="sales.html" class="btn btn-outline-primary btn-sm">
+                                View All Transactions <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="recentSalesTable"></table>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
-    <script src="/static/js/dashboard.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/dashboard.js"></script>
 </body>
 
 </html>
