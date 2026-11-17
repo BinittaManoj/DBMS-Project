@@ -102,7 +102,7 @@ from the first commit and excludes the required paths, all required folders
 and files exist, the supplied baseline has eight table definitions, and the
 environment template contains the expected keys with placeholder secrets.
 
-### 1.1 Preserve baseline table names — BLOCKED
+### 1.1 Preserve baseline table names — ACCEPTED DEVIATION
 
 Verification against `database/schema.sql` and the live `retail_db`:
 
@@ -114,7 +114,29 @@ Baseline singular names present: inventory
 ```
 
 The current application uses plural table names throughout its ORM, SQL,
-routers, and live database; the baseline requires eight singular names. The
-schema script drops and recreates tables, so a direct rename/reset risks the
-existing data and requires a coordinated application/schema migration.
-Implementation is paused pending the user's choice of schema direction.
+routers, and live database; the baseline requires eight singular names. On
+the user's instruction to choose the direction necessary for the multi-branch
+system, retain the established schema to avoid a coordinated, potentially
+destructive rename. Preserve the baseline entities through this mapping:
+
+```text
+branch -> branches
+supplier -> suppliers
+product -> products
+customer -> customers
+inventory -> inventory
+sale -> sales
+sale_item -> sale_items
+purchase_order -> purchase_orders
+```
+
+This is an intentional naming deviation, not a claim that the singular-name
+check passed.
+
+### 1.2 Identity keys — PASS
+
+Live database verification returned 12 identity columns; every primary key
+column is an identity column, and the query found no primary-key fields
+without identity generation. The schema declarations use
+`GENERATED ALWAYS AS IDENTITY`; no `SERIAL` or `MAX(...)` ID allocator was
+found in `database/schema.sql`.
