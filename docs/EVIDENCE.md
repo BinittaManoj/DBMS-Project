@@ -81,3 +81,15 @@ baseline sections: 16
 
 The user-provided original SQL deliverable is preserved in
 `docs/COURSE_BASELINE.md`.
+
+### 0.5 Environment template secrets — PASS
+
+Verification:
+
+```text
+DATABASE_URL= present
+JWT_SECRET_KEY= present
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES= present
+.env.example:5:DATABASE_URL=postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/retail_db
+No concrete database password or JWT secret found.
+```
