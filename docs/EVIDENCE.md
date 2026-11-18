@@ -161,3 +161,38 @@ Frontend production build: passed
 `sale_item_id` and `inventory_id` remain unique identity columns for API
 compatibility. Each product can now appear only once in a sale; duplicate sale
 lines are rejected with a clear database error.
+
+### 1.4 Medicine catalog fields — PASS
+
+Added a unique, generated `medicine_code` and optional `image_url` to the
+product schema, ORM, API, catalog form, search, and medicine analytics.
+Existing products were backfilled with stable codes. The migration was applied
+transactionally to `retail_db` and reapplied to verify idempotency; the current
+product codes are nonblank and unique.
+
+Verification:
+
+```text
+Full backend suite: 14 passed, 1 pre-existing deprecation warning
+Frontend lint: passed
+Frontend production build: passed
+Medicine analytics query: returned the medicine code and image_url field
+Generated medicine-code default: verified inside a rolled-back test transaction
+```
+
+### Branch concurrency — PASS
+
+The sale procedure locks only the matching `(branch_id, product_id)` inventory
+row. This keeps competing sales for the same branch/product serialized without
+blocking sales for the same medicine at other branches. The live database was
+updated with migration `003_branch_scoped_sale_lock.sql`.
+
+Verification:
+
+```text
+Active demo branches: MedMart Andheri, MedMart Dadar, MedMart Pune
+Concurrency test: independent branch sale completed while another branch's
+stock row was locked; a competing sale at the locked branch waited and was
+rejected after stock reached zero
+Procedure tests: 3 passed
+```

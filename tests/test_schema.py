@@ -47,3 +47,51 @@ def test_inventory_and_sale_items_use_composite_primary_keys():
     """)
     assert any('quantity >= 0' in definition for (definition,) in cur.fetchall())
     conn.close()
+
+
+def test_medicine_catalog_codes_are_present_and_unique():
+    conn = psycopg2.connect(DB_URL)
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT
+            COUNT(*) FILTER (WHERE medicine_code IS NULL OR BTRIM(medicine_code) = ''),
+            COUNT(DISTINCT medicine_code),
+            COUNT(*)
+        FROM products
+    """)
+    missing_codes, distinct_codes, product_count = cur.fetchone()
+    assert missing_codes == 0
+    assert distinct_codes == product_count
+
+    cur.execute("""
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'products'
+          AND column_name = 'image_url'
+    """)
+    assert cur.fetchone() == ('image_url',)
+    conn.close()
+
+
+def test_medicine_code_defaults_to_a_generated_code():
+    conn = psycopg2.connect(DB_URL)
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO products (
+                product_name, category_id, supplier_id, unit_price, cost_price
+            )
+            SELECT
+                'catalog-code-probe-' || txid_current(),
+                c.category_id, s.supplier_id, 1, 1
+            FROM categories c
+            CROSS JOIN suppliers s
+            LIMIT 1
+            RETURNING medicine_code
+        """)
+        generated_code = cur.fetchone()[0]
+        assert generated_code.startswith('MED-')
+    finally:
+        conn.rollback()
+        conn.close()

@@ -17,7 +17,10 @@ def list_branches(db: Session = Depends(get_db)):
 
 @router.get('/{branch_id}', response_model=BranchOut)
 def get_branch(branch_id: int, db: Session = Depends(get_db)):
-    branch = db.query(Branch).filter(Branch.branch_id == branch_id).first()
+    branch = db.query(Branch).filter(
+        Branch.branch_id == branch_id,
+        Branch.is_active.is_(True),
+    ).first()
     if not branch:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Branch not found')
     return branch
@@ -34,7 +37,10 @@ def create_branch(payload: BranchCreate, db: Session = Depends(get_db)):
 
 @router.put('/{branch_id}', response_model=BranchOut)
 def update_branch(branch_id: int, payload: BranchUpdate, db: Session = Depends(get_db)):
-    branch = db.query(Branch).filter(Branch.branch_id == branch_id).first()
+    branch = db.query(Branch).filter(
+        Branch.branch_id == branch_id,
+        Branch.is_active.is_(True),
+    ).first()
     if not branch:
         raise HTTPException(status_code=404, detail='Branch not found')
     for key, value in payload.model_dump().items():
@@ -45,7 +51,11 @@ def update_branch(branch_id: int, payload: BranchUpdate, db: Session = Depends(g
 
 @router.delete('/{branch_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_branch(branch_id: int, db: Session = Depends(get_db)):
-    branch = db.query(Branch).filter(Branch.branch_id == branch_id).first()
+    branch = db.query(Branch).filter(
+        Branch.branch_id == branch_id,
+        Branch.is_active.is_(True),
+    ).first()
     if not branch:
         raise HTTPException(status_code=404, detail='Branch not found')
-    db.delete(branch); db.commit()
+    branch.is_active = False
+    db.commit()

@@ -4,6 +4,27 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    user_id: int
+    full_name: str
+    email: str
+    role: str
+    branch_id: int | None = None
+    is_active: bool
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = 'bearer'
+    user: UserOut
+
+
 class BranchBase(BaseModel):
     branch_name: str
     address: str
@@ -68,8 +89,10 @@ class SupplierOut(SupplierBase):
 
 
 class ProductBase(BaseModel):
+    medicine_code: Optional[str] = Field(None, min_length=1, max_length=30)
     product_name: str
     brand: Optional[str] = None
+    image_url: Optional[str] = Field(None, max_length=500)
     category_id: int
     supplier_id: int
     unit_price: float = Field(..., gt=0)
@@ -89,6 +112,7 @@ class ProductCreate(ProductBase):
 class ProductOut(ProductBase):
     model_config = ConfigDict(from_attributes=True)
     product_id: int
+    medicine_code: str
     created_at: datetime
 
 
@@ -127,6 +151,14 @@ class InventoryCreate(InventoryBase):
     pass
 
 
+class InventoryUpdate(BaseModel):
+    quantity: Optional[int] = None
+    reorder_level: Optional[int] = None
+    batch_number: Optional[str] = None
+    expiry_date: Optional[date] = None
+    manufacture_date: Optional[date] = None
+
+
 class InventoryOut(InventoryBase):
     model_config = ConfigDict(from_attributes=True)
     inventory_id: int
@@ -150,6 +182,14 @@ class ProcessSaleRequest(BaseModel):
     notes: Optional[str] = None
     prescription_no: Optional[str] = None
     items: list[SaleItemPayload]
+
+
+class ConcurrencySimulationRequest(BaseModel):
+    branch_id: int = 1
+    product_id: int = 1
+    threads_count: int = 5
+    quantity_per_sale: int = 2
+    initial_stock: Optional[int] = None
 
 
 class RestockRequest(BaseModel):

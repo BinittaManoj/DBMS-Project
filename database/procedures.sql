@@ -82,7 +82,7 @@ BEGIN
          WHERE i.branch_id  = p_branch_id
            AND i.product_id = v_product_id
            AND p.is_active  = TRUE
-           FOR UPDATE;                 -- row-level lock prevents concurrent over-selling
+           FOR UPDATE OF i;            -- lock only this branch's stock row
 
         IF NOT FOUND THEN
             RAISE EXCEPTION
@@ -160,8 +160,8 @@ END;
 $$;
 
 COMMENT ON PROCEDURE process_sale IS
-    'Atomically processes a sale: locks inventory (FOR UPDATE), validates stock, '
-    'inserts sale + items, triggers stock decrement. Full rollback on failure.';
+    'Atomically processes a sale: locks only the requested branch/product inventory row, '
+    'validates stock, inserts sale + items, and triggers stock decrement.';
 
 
 -- =============================================================================

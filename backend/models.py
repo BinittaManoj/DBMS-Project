@@ -68,8 +68,10 @@ class Supplier(Base):
 class Product(Base):
     __tablename__ = 'products'
     product_id = Column(Integer, primary_key=True, index=True)
+    medicine_code = Column(String(30), nullable=False, unique=True)
     product_name = Column(String(200), nullable=False)
     brand = Column(String(100), nullable=True)
+    image_url = Column(String(500), nullable=True)
     category_id = Column(Integer, ForeignKey('categories.category_id'), nullable=False)
     supplier_id = Column(Integer, ForeignKey('suppliers.supplier_id'), nullable=False)
     unit_price = Column(Numeric(12, 2), nullable=False)

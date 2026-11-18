@@ -19,6 +19,7 @@ DROP TABLE IF EXISTS suppliers              CASCADE;
 DROP TABLE IF EXISTS categories             CASCADE;
 DROP TABLE IF EXISTS branches               CASCADE;
 DROP SEQUENCE IF EXISTS invoice_seq;
+DROP SEQUENCE IF EXISTS medicine_code_seq;
 
 -- =============================================================================
 -- 1. BRANCHES
@@ -86,10 +87,15 @@ CREATE INDEX idx_suppliers_name ON suppliers(supplier_name);
 -- =============================================================================
 -- 4. PRODUCTS  (pharmacy-specific: expiry tracking, drug schedule, HSN code)
 -- =============================================================================
+CREATE SEQUENCE medicine_code_seq START 1 INCREMENT 1;
+
 CREATE TABLE products (
     product_id           INTEGER        GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    medicine_code        VARCHAR(30)    NOT NULL UNIQUE
+                         DEFAULT ('MED-' || LPAD(NEXTVAL('medicine_code_seq')::TEXT, 6, '0')),
     product_name         VARCHAR(200)   NOT NULL,
     brand                VARCHAR(100),
+    image_url            VARCHAR(500),
     category_id          INTEGER        NOT NULL REFERENCES categories(category_id),
     supplier_id          INTEGER        NOT NULL REFERENCES suppliers(supplier_id),
     unit_price           NUMERIC(12,2)  NOT NULL CHECK (unit_price > 0),

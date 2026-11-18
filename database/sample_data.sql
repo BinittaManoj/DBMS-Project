@@ -8,6 +8,13 @@ VALUES
     ('MedMart Dadar', '88 Shivaji Park Road, Dadar', 'Mumbai', '9876502222', 'dadar@medmart.in', 'Vikram Desai', '27ABCDE5678F1Z5', TRUE),
     ('MedMart Pune', '21 FC Road, Pune', 'Pune', '9876503333', 'pune@medmart.in', 'Ananya Joshi', '27ABCDE9012F1Z5', TRUE);
 
+INSERT INTO app_user (full_name, email, password_hash, role, branch_id, is_active)
+VALUES
+    ('General Manager', 'gm@medmart.in', '$2b$12$fuYppuEBbUg..NqjcuIo6.c0lYGKnjwtL31p9oy.iAK0Ow1l/B1pK', 'GENERAL_MANAGER', NULL, TRUE),
+    ('Branch 1 Manager', 'branch1@medmart.in', '$2b$12$NbrqyrjvXWD/RngmAWGeYOUUjAoSsBgZjeL0iYvHOzrfTDZyCL9AC', 'BRANCH_MANAGER', 1, TRUE),
+    ('Branch 2 Manager', 'branch2@medmart.in', '$2b$12$Fvk4AIgUPANkg6DAlXaf5.ULKa9d0meHJR74s936/WswGRW6d1btO', 'BRANCH_MANAGER', 2, TRUE),
+    ('Branch 3 Manager', 'branch3@medmart.in', '$2b$12$Vdg3KX9gwbYnvedGaQj1KOipop0WI/2CLHnjYmWjzEbUo0hY1DqF2', 'BRANCH_MANAGER', 3, TRUE);
+
 INSERT INTO categories (category_name, description, is_active)
 VALUES
     ('Pain Relief', 'Pain management products', TRUE),
