@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from ..database import get_db
-from ..models import Product
+from ..models import Category, Product, Supplier
 from ..schemas import ProductCreate, ProductOut
 
 router = APIRouter()
@@ -40,6 +40,21 @@ def create_product(payload: ProductCreate, db: Session = Depends(get_db)):
     if not values.get('medicine_code'):
         next_code = db.execute(text("SELECT nextval('medicine_code_seq')")).scalar_one()
         values['medicine_code'] = f'MED-{next_code:06d}'
+
+    # Validate or fallback category_id to prevent FK violation
+    cat_id = values.get('category_id')
+    cat_exists = db.query(Category).filter(Category.category_id == cat_id).first() if cat_id else None
+    if not cat_exists:
+        first_cat = db.query(Category.category_id).filter(Category.is_active == True).first()
+        values['category_id'] = first_cat[0] if first_cat else 1
+
+    # Validate or fallback supplier_id to prevent FK violation
+    sup_id = values.get('supplier_id')
+    sup_exists = db.query(Supplier).filter(Supplier.supplier_id == sup_id).first() if sup_id else None
+    if not sup_exists:
+        first_sup = db.query(Supplier.supplier_id).filter(Supplier.is_active == True).first()
+        values['supplier_id'] = first_sup[0] if first_sup else 1
+
     product = Product(**values)
     product.created_at = datetime.utcnow()
     db.add(product)
@@ -47,9 +62,14 @@ def create_product(payload: ProductCreate, db: Session = Depends(get_db)):
         db.commit()
     except IntegrityError as exc:
         db.rollback()
+        err_msg = str(exc.orig) if hasattr(exc, 'orig') else str(exc)
+        if 'unique constraint' in err_msg.lower() or 'uq_' in err_msg.lower():
+            detail = 'Medicine code or product name and brand combination already exists'
+        else:
+            detail = f'Failed to save product: {err_msg}'
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail='Medicine code or product name and brand already exists',
+            detail=detail,
         ) from exc
     db.refresh(product)
     return product

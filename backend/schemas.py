@@ -151,6 +151,26 @@ class InventoryCreate(InventoryBase):
     pass
 
 
+class InventoryAddMedicinePayload(BaseModel):
+    branch_id: int
+    product_id: Optional[int] = None
+    # For creating new medicine in catalog
+    product_name: Optional[str] = None
+    brand: Optional[str] = None
+    category_id: Optional[int] = None
+    supplier_id: Optional[int] = None
+    unit_price: Optional[float] = None
+    cost_price: Optional[float] = None
+    unit_of_measure: str = 'STRIP'
+    requires_prescription: bool = False
+    drug_schedule: str = 'OTC'
+    # Inventory details
+    quantity: int = Field(50, ge=0)
+    reorder_level: int = Field(15, ge=0)
+    batch_number: Optional[str] = None
+    expiry_date: Optional[date] = None
+
+
 class InventoryUpdate(BaseModel):
     quantity: Optional[int] = None
     reorder_level: Optional[int] = None

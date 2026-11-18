@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   getBranchSalesReport,
+  getEmployeeSalesReport,
   getInventoryReport,
   getLowStockAlerts,
   resolveLowStockAlert,
@@ -20,6 +21,7 @@ export default function ReportsView({ branches = [] }) {
 
   // Report Data
   const [branchSalesData, setBranchSalesData] = useState([]);
+  const [employeeSalesData, setEmployeeSalesData] = useState([]);
   const [inventoryData, setInventoryData] = useState([]);
   const [alertsData, setAlertsData] = useState([]);
 
@@ -31,10 +33,29 @@ export default function ReportsView({ branches = [] }) {
     try {
       setLoading(true);
       setError('');
-      const data = await getBranchSalesReport();
-      setBranchSalesData(data?.rows || data || []);
+      const [branchRes, empRes] = await Promise.all([
+        getBranchSalesReport(),
+        getEmployeeSalesReport(filterBranchId ? parseInt(filterBranchId, 10) : null),
+      ]);
+      setBranchSalesData(branchRes?.rows || branchRes || []);
+      setEmployeeSalesData(empRes?.rows || empRes || []);
     } catch (err) {
       setError('Failed to fetch branch sales report: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEmployeeSales = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await getEmployeeSalesReport(
+        filterBranchId ? parseInt(filterBranchId, 10) : null
+      );
+      setEmployeeSalesData(data?.rows || data || []);
+    } catch (err) {
+      setError('Failed to fetch employee sales: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -75,6 +96,8 @@ export default function ReportsView({ branches = [] }) {
   useEffect(() => {
     if (activeReport === 'branch-sales') {
       fetchBranchSales();
+    } else if (activeReport === 'employee-sales') {
+      fetchEmployeeSales();
     } else if (activeReport === 'inventory-status') {
       fetchInventory();
     } else if (activeReport === 'alerts') {
@@ -107,7 +130,15 @@ export default function ReportsView({ branches = [] }) {
               onClick={() => setActiveReport('branch-sales')}
               style={{ fontSize: '0.85rem' }}
             >
-              📊 Branch Sales (v_branch_sales_summary)
+              📊 Branch Sales
+            </button>
+            <button
+              type="button"
+              className={activeReport === 'employee-sales' ? 'primary-btn' : 'secondary-btn'}
+              onClick={() => setActiveReport('employee-sales')}
+              style={{ fontSize: '0.85rem' }}
+            >
+              🏆 Employee Sales & Performance
             </button>
             <button
               type="button"
@@ -188,6 +219,161 @@ export default function ReportsView({ branches = [] }) {
                     <tr>
                       <td colSpan="6">
                         <div className="empty-box">No branch sales data recorded yet.</div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Highest Single Sale Employee Table */}
+          {!loading && (
+            <div style={{ marginTop: '28px', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+              <div className="panel-header" style={{ marginBottom: '12px' }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '0.98rem', color: '#1e293b' }}>
+                    🏆 Highest Single Sale & Employee Sales Leaderboard
+                  </h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                    Real-time performance tracking: highest single invoice billed by each employee, total volume, and revenue.
+                  </p>
+                </div>
+              </div>
+              <div className="table-wrap">
+                <table style={{ width: '100%', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Branch</th>
+                      <th>Role</th>
+                      <th style={{ textAlign: 'center' }}>Total Invoices</th>
+                      <th style={{ textAlign: 'right', color: '#2563eb' }}>Highest Single Sale</th>
+                      <th style={{ textAlign: 'right' }}>Avg Bill Value</th>
+                      <th style={{ textAlign: 'right' }}>Total Revenue Billed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employeeSalesData.map((emp) => (
+                      <tr key={emp.employee_id}>
+                        <td>
+                          <strong>{emp.employee_name}</strong>
+                          <small className="table-subtitle">Employee #{emp.employee_id}</small>
+                        </td>
+                        <td>{emp.branch_name}</td>
+                        <td>
+                          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', background: '#e0e7ff', color: '#4338ca' }}>
+                            {emp.role}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'center', fontWeight: '600' }}>
+                          {emp.total_transactions}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: '700', color: '#2563eb' }}>
+                          {currency(emp.highest_single_sale)}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {currency(emp.avg_sale_value)}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: '700', color: '#16a34a' }}>
+                          {currency(emp.total_revenue)}
+                        </td>
+                      </tr>
+                    ))}
+                    {employeeSalesData.length === 0 && (
+                      <tr>
+                        <td colSpan="7">
+                          <div className="empty-box">No employee sales records found.</div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* REPORT 2: EMPLOYEE SALES DEDICATED VIEW */}
+      {activeReport === 'employee-sales' && (
+        <div className="panel" style={{ padding: '20px' }}>
+          <div className="panel-header" style={{ marginBottom: '16px' }}>
+            <div>
+              <h3>Employee Sales & Highest Single Sale Leaderboard</h3>
+              <p>Breakdown of sales, peak billing, and transactions handled per cashier and pharmacist.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <select
+                value={filterBranchId}
+                onChange={(e) => setFilterBranchId(e.target.value)}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+              >
+                <option value="">All Branches</option>
+                {branches.map((b) => (
+                  <option key={b.branch_id} value={b.branch_id}>
+                    {b.branch_name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="secondary-btn small"
+                onClick={fetchEmployeeSales}
+                disabled={loading}
+              >
+                ↻ Refresh
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="loading-card">Loading employee metrics…</div>
+          ) : (
+            <div className="table-wrap">
+              <table style={{ width: '100%', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Branch</th>
+                    <th>Role</th>
+                    <th style={{ textAlign: 'center' }}>Total Invoices</th>
+                    <th style={{ textAlign: 'right', color: '#2563eb' }}>Highest Single Sale</th>
+                    <th style={{ textAlign: 'right' }}>Avg Bill Value</th>
+                    <th style={{ textAlign: 'right' }}>Total Revenue Billed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employeeSalesData.map((emp) => (
+                    <tr key={emp.employee_id}>
+                      <td>
+                        <strong>{emp.employee_name}</strong>
+                        <small className="table-subtitle">Employee #{emp.employee_id}</small>
+                      </td>
+                      <td>{emp.branch_name}</td>
+                      <td>
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', background: '#e0e7ff', color: '#4338ca' }}>
+                          {emp.role}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center', fontWeight: '600' }}>
+                        {emp.total_transactions}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: '700', color: '#2563eb' }}>
+                        {currency(emp.highest_single_sale)}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {currency(emp.avg_sale_value)}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: '700', color: '#16a34a' }}>
+                        {currency(emp.total_revenue)}
+                      </td>
+                    </tr>
+                  ))}
+                  {employeeSalesData.length === 0 && (
+                    <tr>
+                      <td colSpan="7">
+                        <div className="empty-box">No employee billing records found.</div>
                       </td>
                     </tr>
                   )}

@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .database import engine
 from .models import Base
-from .routers import analytics, auth, branches, categories, customers, inventory, products, queries, reports, sales, suppliers
+from .routers import analytics, auth, branches, categories, customers, employees, inventory, products, queries, reports, sales, suppliers
 
 Base.metadata.reflect(bind=engine)
 
@@ -15,7 +15,7 @@ app = FastAPI(title='MedMart Retail Analytics', version='1.0.0', docs_url='/docs
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3000', 'http://127.0.0.1:3000'],
+    allow_origins=['*'],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
@@ -27,6 +27,7 @@ app.include_router(categories.router, prefix='/api/categories', tags=['categorie
 app.include_router(products.router, prefix='/api/products', tags=['products'])
 app.include_router(suppliers.router, prefix='/api/suppliers', tags=['suppliers'])
 app.include_router(customers.router, prefix='/api/customers', tags=['customers'])
+app.include_router(employees.router, prefix='/api/employees', tags=['employees'])
 app.include_router(inventory.router, prefix='/api/inventory', tags=['inventory'])
 app.include_router(sales.router, prefix='/api/sales', tags=['sales'])
 app.include_router(reports.router, prefix='/api/reports', tags=['reports'])

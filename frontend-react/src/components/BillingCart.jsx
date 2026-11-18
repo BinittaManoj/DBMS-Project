@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 const currency = (amount) =>
   new Intl.NumberFormat('en-IN', {
@@ -11,6 +11,7 @@ export default function BillingCart({
   products = [],
   branches = [],
   customers = [],
+  employees = [],
   currentUser,
   onProcessSale,
   onSuccessInvoice,
@@ -24,6 +25,23 @@ export default function BillingCart({
   const [billDiscount, setBillDiscount] = useState('0');
   const [prescriptionNo, setPrescriptionNo] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Active employees for the selected branch (or all active employees)
+  const branchEmployees = useMemo(() => {
+    if (!employees || employees.length === 0) return [];
+    if (!selectedBranchId) return employees;
+    const filtered = employees.filter((e) => String(e.branch_id) === String(selectedBranchId));
+    return filtered.length > 0 ? filtered : employees;
+  }, [employees, selectedBranchId]);
+
+  useEffect(() => {
+    if (branchEmployees.length > 0) {
+      const exists = branchEmployees.some((e) => String(e.employee_id) === String(employeeId));
+      if (!exists) {
+        setEmployeeId(String(branchEmployees[0].employee_id));
+      }
+    }
+  }, [branchEmployees, employeeId]);
   
   // Cart state: array of { product, quantity, unit_price, discount_pct }
   const [cart, setCart] = useState([]);
@@ -579,13 +597,21 @@ export default function BillingCart({
             </label>
 
             <label style={{ fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              Cashier / Emp ID
-              <input
-                type="number"
+              Cashier / Pharmacist
+              <select
                 value={employeeId}
                 onChange={(e) => setEmployeeId(e.target.value)}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-              />
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+              >
+                {branchEmployees.map((emp) => (
+                  <option key={emp.employee_id} value={emp.employee_id}>
+                    {emp.full_name || `${emp.first_name} ${emp.last_name}`} ({emp.role}) #{emp.employee_id}
+                  </option>
+                ))}
+                {branchEmployees.length === 0 && (
+                  <option value={employeeId || '1'}>Employee #{employeeId || '1'}</option>
+                )}
+              </select>
             </label>
           </div>
 

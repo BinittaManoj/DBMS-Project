@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
 import {
+  addMedicineToInventory,
   createBranch,
   createInventory,
   createProduct,
@@ -13,6 +14,7 @@ import {
   getCustomers,
   getDashboardCharts,
   getDashboardStats,
+  getEmployees,
   getInventoryStatus,
   getMedicineAnalytics,
   getProducts,
@@ -206,6 +208,7 @@ function App() {
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [dashboardStats, setDashboardStats] = useState(null);
   const [dashboardCharts, setDashboardCharts] = useState({ sales_trend: [], branch_revenue: [] });
   const [selectedMedicineId, setSelectedMedicineId] = useState('');
@@ -227,10 +230,22 @@ function App() {
 
   // Inventory CRUD state
   const [isAddInventoryOpen, setIsAddInventoryOpen] = useState(false);
+  const [inventoryFormMode, setInventoryFormMode] = useState('existing'); // 'existing' or 'new'
   const [editingInventoryItem, setEditingInventoryItem] = useState(null);
   const [inventoryForm, setInventoryForm] = useState({
     branch_id: '1',
     product_id: '',
+    // Brand new medicine fields
+    product_name: '',
+    brand: '',
+    category_id: '1',
+    supplier_id: '1',
+    unit_price: '120',
+    cost_price: '85',
+    unit_of_measure: 'STRIP',
+    requires_prescription: false,
+    drug_schedule: 'OTC',
+    // Stock fields
     quantity: '50',
     reorder_level: '15',
     batch_number: 'BATCH-2026',
@@ -263,6 +278,7 @@ function App() {
         categoryData,
         supplierData,
         customerData,
+        employeeData,
         statsData,
         chartsData,
       ] = await Promise.all([
@@ -272,6 +288,7 @@ function App() {
         getCategories(),
         getSuppliers(),
         getCustomers(),
+        getEmployees(),
         getDashboardStats(),
         getDashboardCharts(),
       ]);
@@ -281,6 +298,7 @@ function App() {
       setCategories(Array.isArray(categoryData) ? categoryData : []);
       setSuppliers(Array.isArray(supplierData) ? supplierData : []);
       setCustomers(Array.isArray(customerData) ? customerData : []);
+      setEmployees(Array.isArray(employeeData) ? employeeData : []);
       setDashboardStats(statsData);
       setDashboardCharts(chartsData || { sales_trend: [], branch_revenue: [] });
     } catch (err) {
@@ -411,15 +429,39 @@ function App() {
     e.preventDefault();
     try {
       setError('');
-      await createInventory({
+      let payload = {
         branch_id: Number(inventoryForm.branch_id),
-        product_id: Number(inventoryForm.product_id),
         quantity: Number(inventoryForm.quantity),
         reorder_level: Number(inventoryForm.reorder_level),
         batch_number: inventoryForm.batch_number || null,
         expiry_date: inventoryForm.expiry_date || null,
-      });
-      setMessage('✅ Inventory stock record added successfully!');
+      };
+
+      if (inventoryFormMode === 'new') {
+        if (!inventoryForm.product_name.trim()) {
+          throw new Error('Please enter the medicine name');
+        }
+        payload = {
+          ...payload,
+          product_name: inventoryForm.product_name.trim(),
+          brand: inventoryForm.brand.trim() || 'Generic',
+          category_id: Number(inventoryForm.category_id) || 1,
+          supplier_id: Number(inventoryForm.supplier_id) || 1,
+          unit_price: Number(inventoryForm.unit_price) || 100,
+          cost_price: Number(inventoryForm.cost_price) || 70,
+          unit_of_measure: inventoryForm.unit_of_measure || 'STRIP',
+          requires_prescription: inventoryForm.requires_prescription,
+          drug_schedule: inventoryForm.drug_schedule || 'OTC',
+        };
+      } else {
+        if (!inventoryForm.product_id) {
+          throw new Error('Please select a medicine from the catalog');
+        }
+        payload.product_id = Number(inventoryForm.product_id);
+      }
+
+      const res = await addMedicineToInventory(payload);
+      setMessage(res.message || '✅ Medicine stocked successfully!');
       setIsAddInventoryOpen(false);
       await loadData();
     } catch (err) {
@@ -483,18 +525,20 @@ function App() {
     event.preventDefault();
     try {
       setError('');
+      const catId = Number(productForm.category_id) || (categories[0]?.category_id || 1);
+      const supId = Number(productForm.supplier_id) || (suppliers[0]?.supplier_id || 1);
       const payload = {
         medicine_code: productForm.medicine_code || null,
         product_name: productForm.product_name,
         brand: productForm.brand || null,
         image_url: productForm.image_url || null,
-        category_id: Number(productForm.category_id),
-        supplier_id: Number(productForm.supplier_id),
+        category_id: catId,
+        supplier_id: supId,
         unit_price: Number(productForm.unit_price),
         cost_price: Number(productForm.cost_price),
-        unit_of_measure: productForm.unit_of_measure,
+        unit_of_measure: productForm.unit_of_measure || 'STRIP',
         requires_prescription: productForm.requires_prescription,
-        drug_schedule: productForm.drug_schedule,
+        drug_schedule: productForm.drug_schedule || 'OTC',
         hsn_code: productForm.hsn_code || null,
         shelf_life_days: productForm.shelf_life_days ? Number(productForm.shelf_life_days) : null,
       };
@@ -941,6 +985,7 @@ function App() {
               products={products}
               branches={visibleBranches}
               customers={customers}
+              employees={employees}
               currentUser={user}
               onProcessSale={handleProcessSale}
               onSuccessInvoice={(invoiceResult) => {
@@ -1023,9 +1068,19 @@ function App() {
                     type="button"
                     className="primary-btn small"
                     onClick={() => {
+                      setInventoryFormMode('existing');
                       setInventoryForm({
                         branch_id: String(visibleBranches[0]?.branch_id || '1'),
                         product_id: String(products[0]?.product_id || ''),
+                        product_name: '',
+                        brand: '',
+                        category_id: String(categories[0]?.category_id || '1'),
+                        supplier_id: String(suppliers[0]?.supplier_id || '1'),
+                        unit_price: '120',
+                        cost_price: '85',
+                        unit_of_measure: 'STRIP',
+                        requires_prescription: false,
+                        drug_schedule: 'OTC',
                         quantity: '50',
                         reorder_level: '15',
                         batch_number: 'BATCH-' + Math.floor(1000 + Math.random() * 9000),
@@ -1034,7 +1089,7 @@ function App() {
                       setIsAddInventoryOpen(true);
                     }}
                   >
-                    ＋ Add Stock Record
+                    ＋ Add Stock / Medicine
                   </button>
 
                   <button
@@ -1796,9 +1851,9 @@ function App() {
       {/* ADD INVENTORY MODAL */}
       {isAddInventoryOpen && (
         <div className="modal-backdrop">
-          <div className="modal-card" style={{ maxWidth: '520px' }}>
+          <div className="modal-card" style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="modal-header">
-              <h3>＋ Add Inventory Stock Record</h3>
+              <h3>＋ Add Medicine & Stock Record</h3>
               <button
                 type="button"
                 className="close-btn"
@@ -1807,9 +1862,30 @@ function App() {
                 ✕
               </button>
             </div>
-            <form onSubmit={handleCreateInventory} className="modal-body stack-form">
+
+            {/* Mode Switcher */}
+            <div style={{ display: 'flex', gap: '8px', padding: '6px', background: '#f1f5f9', borderRadius: '8px', margin: '0 20px 16px 20px' }}>
+              <button
+                type="button"
+                className={inventoryFormMode === 'existing' ? 'primary-btn small' : 'secondary-btn small'}
+                onClick={() => setInventoryFormMode('existing')}
+                style={{ flex: 1, padding: '7px 12px', fontSize: '0.84rem' }}
+              >
+                📋 Existing Catalog Medicine
+              </button>
+              <button
+                type="button"
+                className={inventoryFormMode === 'new' ? 'primary-btn small' : 'secondary-btn small'}
+                onClick={() => setInventoryFormMode('new')}
+                style={{ flex: 1, padding: '7px 12px', fontSize: '0.84rem' }}
+              >
+                ✨ New Medicine (Add to Catalog & Stock)
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateInventory} className="modal-body stack-form" style={{ paddingTop: 0 }}>
               <label>
-                Branch
+                Target Branch
                 <select
                   value={inventoryForm.branch_id}
                   onChange={(e) => setInventoryForm({ ...inventoryForm, branch_id: e.target.value })}
@@ -1823,22 +1899,148 @@ function App() {
                 </select>
               </label>
 
-              <label>
-                Medicine / Product
-                <select
-                  value={inventoryForm.product_id}
-                  onChange={(e) => setInventoryForm({ ...inventoryForm, product_id: e.target.value })}
-                  required
-                >
-                  <option value="">-- Choose Medicine --</option>
-                  {products.map((p) => (
-                    <option key={p.product_id} value={p.product_id}>
-                      {p.product_name} ({p.brand || 'Generic'}) - ₹{p.unit_price}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {inventoryFormMode === 'existing' ? (
+                <label>
+                  Select Medicine from Catalog
+                  <select
+                    value={inventoryForm.product_id}
+                    onChange={(e) => setInventoryForm({ ...inventoryForm, product_id: e.target.value })}
+                    required
+                  >
+                    <option value="">-- Choose Medicine --</option>
+                    {products.map((p) => (
+                      <option key={p.product_id} value={p.product_id}>
+                        {p.product_name} ({p.brand || 'Generic'}) - ₹{p.unit_price}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                /* NEW MEDICINE DETAILS (SAVES TO CATALOG) */
+                <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: '#4338ca', letterSpacing: '0.05em' }}>
+                    📦 New Catalog Medicine Information
+                  </span>
 
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
+                    <label style={{ margin: 0 }}>
+                      Medicine Name *
+                      <input
+                        type="text"
+                        value={inventoryForm.product_name}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, product_name: e.target.value })}
+                        placeholder="e.g. Azithromycin 500mg"
+                        required={inventoryFormMode === 'new'}
+                      />
+                    </label>
+                    <label style={{ margin: 0 }}>
+                      Brand / Manufacturer
+                      <input
+                        type="text"
+                        value={inventoryForm.brand}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, brand: e.target.value })}
+                        placeholder="e.g. Cipla Ltd"
+                      />
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <label style={{ margin: 0 }}>
+                      Drug Category
+                      <select
+                        value={inventoryForm.category_id}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, category_id: e.target.value })}
+                      >
+                        {categories.map((c) => (
+                          <option key={c.category_id} value={c.category_id}>
+                            {c.category_name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={{ margin: 0 }}>
+                      Supplier / Distributor
+                      <select
+                        value={inventoryForm.supplier_id}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, supplier_id: e.target.value })}
+                      >
+                        {suppliers.map((s) => (
+                          <option key={s.supplier_id} value={s.supplier_id}>
+                            {s.supplier_name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <label style={{ margin: 0 }}>
+                      Selling Price (₹) *
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="1"
+                        value={inventoryForm.unit_price}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, unit_price: e.target.value })}
+                        required={inventoryFormMode === 'new'}
+                      />
+                    </label>
+                    <label style={{ margin: 0 }}>
+                      Cost Price (₹) *
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="1"
+                        value={inventoryForm.cost_price}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, cost_price: e.target.value })}
+                        required={inventoryFormMode === 'new'}
+                      />
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '10px' }}>
+                    <label style={{ margin: 0 }}>
+                      Unit
+                      <select
+                        value={inventoryForm.unit_of_measure}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, unit_of_measure: e.target.value })}
+                      >
+                        <option>STRIP</option>
+                        <option>BOTTLE</option>
+                        <option>TUBE</option>
+                        <option>VIAL</option>
+                        <option>SACHET</option>
+                        <option>PACK</option>
+                      </select>
+                    </label>
+                    <label style={{ margin: 0 }}>
+                      Schedule
+                      <select
+                        value={inventoryForm.drug_schedule}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, drug_schedule: e.target.value })}
+                      >
+                        <option>OTC</option>
+                        <option>H</option>
+                        <option>H1</option>
+                        <option>X</option>
+                        <option>G</option>
+                      </select>
+                    </label>
+                    <label style={{ margin: 0 }}>
+                      Prescription Required?
+                      <select
+                        value={String(inventoryForm.requires_prescription)}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, requires_prescription: e.target.value === 'true' })}
+                      >
+                        <option value="false">No (Over-the-Counter)</option>
+                        <option value="true">Yes (Rx Required)</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* COMMON STOCK DETAILS */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <label>
                   Initial Stock Quantity
@@ -1891,7 +2093,7 @@ function App() {
                   Cancel
                 </button>
                 <button type="submit" className="primary-btn">
-                  Create Stock Record
+                  {inventoryFormMode === 'new' ? '✨ Save to Catalog & Stock at Branch' : '＋ Add Stock Record'}
                 </button>
               </div>
             </form>

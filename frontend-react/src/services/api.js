@@ -132,6 +132,13 @@ export function createInventory(payload) {
     });
 }
 
+export function addMedicineToInventory(payload) {
+    return request('/api/inventory/add-medicine', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
 export function updateInventory(branchId, productId, payload) {
     return request(`/api/inventory/${branchId}/${productId}`, {
         method: 'PUT',
@@ -216,6 +223,21 @@ export function getInventoryReport(branchId = null, status = null) {
     if (branchId) params.append('branch_id', branchId);
     if (status) params.append('status', status);
     return request(`/api/reports/inventory?${params.toString()}`);
+}
+
+// Employees & Staff
+export function getEmployees(branchId = null) {
+    const params = new URLSearchParams();
+    if (branchId) params.append('branch_id', branchId);
+    const qs = params.toString();
+    return request(`/api/employees/${qs ? `?${qs}` : ''}`);
+}
+
+export function getEmployeeSalesReport(branchId = null) {
+    const params = new URLSearchParams();
+    if (branchId) params.append('branch_id', branchId);
+    const qs = params.toString();
+    return request(`/api/reports/employee-sales${qs ? `?${qs}` : ''}`);
 }
 
 // Query Explorer (Course SQL Baseline)
